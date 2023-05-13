@@ -1,7 +1,51 @@
+import { Pool } from 'pg';
 import pool from '../../database/connection';
-import getCompanyInfo from '../../database/redis';
-import addDuration from './../../functions/scripts/addDuration';
+import getCompanyInfo from '../../database/redis_cache';
+import addDuration from './../../functions/addDuration';
+import { Request, Response, NextFunction } from 'express';
+import { groupBy } from '../../functions/groupBy';
 
+const LIMITS = {
+  minHoursPerDay: 4,
+  maxHoursPerDay: 12,
+};
+
+interface HoursRecord {
+  entryTime: string;
+  exitTime: string;
+}
+
+interface TimeRecord {
+  id: number;
+  employee_id: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+interface HourRecord {
+  id: number;
+  user_id: number;
+  date: string;
+  entry_time: string;
+  exit_time: string;
+}
+
+interface HourLog {
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+interface Register {
+  id: number;
+  date: Date;
+  employeeId: number;
+  startTime: string;
+  endTime: string;
+}
+
+// Verificar que la fecha de registro sea una fecha valida
 export function isValidDate(dateString: string): boolean {
   const date = new Date(dateString);
   return (
@@ -9,6 +53,7 @@ export function isValidDate(dateString: string): boolean {
   );
 }
 
+// Verificar que la fecha del registro no sea una fecha futura
 export function isValidateNotFutureDate(date: string): boolean {
   const pattern = /^\d{4}-\d{2}-\d{2}$/;
   if (!pattern.test(date)) {
@@ -19,27 +64,20 @@ export function isValidateNotFutureDate(date: string): boolean {
   return inputDate <= currentDate;
 }
 
+// Validar que la hora de entrada y salida sean coherentes
 export function isEntryExitConsistent(entry: string, exit: string): boolean {
   const entryDate = new Date(`2000-01-01T${entry}:00`);
   const exitDate = new Date(`2000-01-01T${exit}:00`);
   return entryDate < exitDate;
 }
 
-const limits = {
-  minHoursPerDay: 4,
-  maxHoursPerDay: 12,
-};
-
+// Validar que las horas laboradas por dia sean razonables dentro de los limites establecidos
 export function validateHoursPerDay(hours: number): boolean {
-  return hours >= limits.minHoursPerDay && hours <= limits.maxHoursPerDay;
+  return hours >= LIMITS.minHoursPerDay && hours <= LIMITS.maxHoursPerDay;
 }
 
-interface HoursRecord {
-  entryTime: string;
-  exitTime: string;
-}
-
-async function validateHours(
+// Realizar validaciones de los registros de horas de acuerdo a los parametros
+export async function validateHours(
   hoursRecord: HoursRecord,
   companyId: string
 ): Promise<boolean> {
@@ -52,7 +90,6 @@ async function validateHours(
   }
 
   // Calculamos las horas trabajadas
-  // const totalHours = calculateTotalHours(
   const totalHours = addDuration(hoursRecord.entryTime, hoursRecord.exitTime);
 
   // Validamos que las horas trabajadas estén dentro de los límites de configuración
@@ -67,21 +104,7 @@ async function validateHours(
   return true;
 }
 
-interface TimeRecord {
-  id: number;
-  employee_id: number;
-  date: string;
-  start_time: string;
-  end_time: string;
-}
-
-function groupBy(arr, key) {
-  return arr.reduce(function (rv, x) {
-    (rv[x[key]] = rv[x[key]] || []).push(x);
-    return rv;
-  }, {});
-}
-
+// Validar que los grupos de registros de horas son consistentes sin superposiciones
 export function isValidateTimeRecords(timeRecords: TimeRecord[]): boolean {
   const groupedRecords = groupBy(timeRecords, 'date');
   for (const date in groupedRecords) {
@@ -97,12 +120,7 @@ export function isValidateTimeRecords(timeRecords: TimeRecord[]): boolean {
   return true;
 }
 
-interface HourLog {
-  date: string;
-  start_time: string;
-  end_time: string;
-}
-
+// Validar que no hay registros de horas con superposiciones
 export function validateNoOverlap(
   hourLogs: HourLog[],
   newLog: HourLog
@@ -132,17 +150,8 @@ export function validateNoOverlap(
   return true;
 }
 
-import { Request, Response, NextFunction } from 'express';
-
-interface Register {
-  id: number;
-  date: Date;
-  employeeId: number;
-  startTime: string;
-  endTime: string;
-}
-
-async function isNotOverlapping(
+// Validar que los registros nuevos no se sobrepongan sobre los registros de la base de datos
+export async function isNotOverlapping(
   req: Request,
   res: Response,
   next: NextFunction
@@ -180,17 +189,8 @@ async function isNotOverlapping(
   next();
 }
 
-import { Pool } from 'pg';
-
-interface HourRecord {
-  id: number;
-  user_id: number;
-  date: string;
-  entry_time: string;
-  exit_time: string;
-}
-
-async function isDuplicateRecord(
+// Verificar que los nuevos registros no existan en la base de datos evitando registros duplicados
+export async function isDuplicateRecord(
   pool: Pool,
   userId: number,
   date: string,

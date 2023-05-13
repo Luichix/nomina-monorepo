@@ -1,30 +1,45 @@
 const express = require('express');
-const dataHours = require('../data/hours.json');
+const dataHours = require('../database/data/hours.json');
 const insertDurations = require('../functions/insertDurations');
 const sumDurations = require('../functions/sumDurations');
 
+import pool from '../database/connection';
 import { TimeRecord } from '../interfaces/types';
 
 const routerHours = express.Router();
 
-// get all time record
-routerHours.get('/', (_, res) => {
-  res.send(dataHours);
-});
-
-// get only time record by employee
-routerHours.get('/:id', (req, res) => {
-  const id = req.params.id;
-  const resultados = dataHours.filter((employee) => employee.personalID === id);
-
-  if (resultados.length === 0) {
-    return res.status(404).send(`No se encontro el colaborador #${id}.`);
+// Obtener todos los registros de horas
+routerHours.get('/', async (_, res) => {
+  try {
+    // Buscar los registros de horas de un colaborador en la base de datos
+    const { rows: registrosHoras } = await pool.query(
+      `SELECT * FROM time_logs;`
+    );
+    res.send(registrosHoras);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error obteniendo los registros de horas');
   }
-
-  return res.json(resultados);
 });
 
-// create new employee time record
+// Obtener solo los registros de horas de un colaborador
+routerHours.get('/:id', async (req, res) => {
+  const idEmployee = req.params.id;
+
+  try {
+    // Buscar los registros de horas de un colaborador en la base de datos
+    const { rows: registrosHoras } = await pool.query(
+      `SELECT * FROM registros_horas WHERE empleado_id = $1 ORDER BY fecha DESC`,
+      [idEmployee]
+    );
+    res.send(registrosHoras);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error obteniendo los registros de horas');
+  }
+});
+
+// Crear un nuevo registro de horas de un colaborador
 routerHours.post('/', (req, res) => {
   const timeRecord = req.body;
 
@@ -41,7 +56,7 @@ routerHours.post('/', (req, res) => {
   res.json(dataHours);
 });
 
-// update all employee time record information
+// Actualizar todo el registro de horas de un colaborador
 routerHours.put('/:id', (req, res) => {
   const updatedEmployeeTimeRecord = req.body;
   const id = req.params.id;
@@ -54,7 +69,7 @@ routerHours.put('/:id', (req, res) => {
   res.json(dataHours);
 });
 
-// update employee time record information
+// Actualizar solo algunas propiedades del registro de horas de un colaborador
 routerHours.patch('/:id', (req, res) => {
   const newInfo = req.body;
   const id = req.params.id;
@@ -68,7 +83,7 @@ routerHours.patch('/:id', (req, res) => {
   res.json(dataHours);
 });
 
-// Delete employee time record
+// Eliminar el registro de horas de un colaborador
 routerHours.delete('/:id', (req, res) => {
   const id = req.params.id;
   const indice = dataHours.findIndex((employee) => employee.hoursID === id);

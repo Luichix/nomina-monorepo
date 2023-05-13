@@ -9,24 +9,6 @@ import {
 const routerEmployees = Router();
 
 // Ruta para obtener todos los registros de horas de un empleado
-routerEmployees.get('/:id', async (req, res) => {
-  const idEmpleado = req.params.id;
-
-  try {
-    const { rows: registrosHoras } = await pool.query(
-      `SELECT * FROM registros_horas WHERE empleado_id = $1 ORDER BY fecha DESC`,
-      [idEmpleado]
-    );
-    res.send(registrosHoras);
-    console.log(
-      '🚀 ~ file: employees.ts:22 ~ routerEmployees.get ~ registrosHoras:',
-      registrosHoras
-    );
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error obteniendo los registros de horas');
-  }
-});
 
 // Ruta para crear un nuevo registro de horas para un empleado
 routerEmployees.post('/:id', async (req, res) => {

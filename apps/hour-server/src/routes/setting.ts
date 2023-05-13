@@ -19,7 +19,7 @@ routerCompanyConfig.put('/config', async (req: Request, res: Response) => {
       [min_work_hours, max_work_hours, existingConfig.id]
     );
   } else {
-    // Si la empresa no tiene una configuración, creamos un nuevo registro en la base de datos
+    // Si la empr no tiene una configuración, creamos un nuevo registro en la base de datos
     await pool.none(
       'INSERT INTO company_config (company_name, min_work_hours, max_work_hours) VALUES ($1, $2, $3)',
       [company_name, min_work_hours, max_work_hours]
