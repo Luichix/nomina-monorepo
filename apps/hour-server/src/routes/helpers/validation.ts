@@ -213,3 +213,45 @@ export async function isDuplicateRecord(
     client.release();
   }
 }
+
+export const isValidateRecords = (date, startTime, endTime) => {
+  // Validar que la fecha sea válida
+  // if (!isValidDate(fecha)) {
+  //   res.status(400).send('Fecha inválida');
+  //   return;
+  // }
+
+  // // Validar que la fecha no sea futura
+
+  // if (!isValidateNotFutureDate(fecha)) {
+  //   res.status(400).send('Fecha inválida');
+  //   return;
+  // }
+
+  // // Validar que la hora de entrada y salida sean consistentes
+  // if (!isEntryExitConsistent(horaInicio, horaFin)) {
+  //   res.status(400).send('Hora de entrada y salida no son consistentes');
+  //   return;
+  // }
+
+  // async function isValidWorkHours(
+  //   entry: string,
+  //   exit: string,
+  //   company: string
+  // ): Promise<boolean> {
+  //   // Obtenemos la configuración de la empresa desde la base de datos
+  //   const config = await pool.one(
+  //     'SELECT * FROM company_config WHERE company_name = $1',
+  //     [company]
+  //   );
+
+  //   // Validamos que la hora de entrada sea anterior a la hora de salida
+  //   if (entry >= exit) {
+  //     return false;
+  //   }
+
+  //   // Validamos que la diferencia entre la hora de entrada y la hora de salida esté dentro de los valores mínimos
+  // }
+
+  return true;
+};
