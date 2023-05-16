@@ -72,10 +72,10 @@ routerHours.get(
 
 // Crear un nuevo registro de horas para un colaborador
 routerHours.post('/new-record/:id', async (req, res) => {
-  const idEmpleado = req.params.id;
+  const idEmployee = req.params.id;
   const { date, startTime, endTime } = req.body;
 
-  if (!isValidateRecords(date, startTime, endTime)) {
+  if (!isValidateRecords(idEmployee, date, startTime, endTime, [])) {
     res.status(400).send('Fecha, hora de entrada y hora de salida inválidas');
     return;
   }
@@ -84,7 +84,7 @@ routerHours.post('/new-record/:id', async (req, res) => {
     const duration = diffDuration(startTime, endTime);
     const { rows: timeLogs } = await pool.query(
       `INSERT INTO time_logs (date, duration, start_time, end_time, employee_id) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [date, duration, startTime, endTime, idEmpleado]
+      [date, duration, startTime, endTime, idEmployee]
     );
     res.status(201).send(timeLogs[0]);
   } catch (err) {
@@ -95,7 +95,7 @@ routerHours.post('/new-record/:id', async (req, res) => {
 
 // Crear múltiples registros de horas para un colaborador
 routerHours.post('/new-records/:id', async (req, res) => {
-  const idEmpleado = req.params.id;
+  const idEmployee = req.params.id;
   const timeLogs = req.body;
 
   if (!Array.isArray(timeLogs) || timeLogs.length === 0) {
@@ -106,7 +106,7 @@ routerHours.post('/new-records/:id', async (req, res) => {
   // Verificar la validez de cada registro
   for (const log of timeLogs) {
     const { date, startTime, endTime } = log;
-    if (!isValidateRecords(date, startTime, endTime)) {
+    if (!isValidateRecords(idEmployee, date, startTime, endTime, [])) {
       res.status(400).send('Fecha, hora de entrada y hora de salida inválidas');
       return;
     }
@@ -121,7 +121,7 @@ routerHours.post('/new-records/:id', async (req, res) => {
 
       const { rows } = await pool.query(
         `INSERT INTO time_logs (date, duration, start_time, end_time, employee_id) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [date, duration, startTime, endTime, idEmpleado]
+        [date, duration, startTime, endTime, idEmployee]
       );
 
       insertedLogs.push(rows[0]);
@@ -151,7 +151,7 @@ routerHours.post('/all-new-records', async (req, res) => {
     for (const log of timeLogs) {
       const { idEmployee, date, startTime, endTime } = log;
 
-      if (!isValidateRecords(date, startTime, endTime)) {
+      if (!isValidateRecords(idEmployee, date, startTime, endTime, [])) {
         res
           .status(400)
           .send('Fecha, hora de entrada y hora de salida inválidas');
