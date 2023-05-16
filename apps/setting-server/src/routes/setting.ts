@@ -1,125 +1,195 @@
 import { Router, Request, Response } from 'express';
 import pool from '../database/connection';
 
-const routerCompanyConfig = Router();
+const routerSetting = Router();
 
-routerCompanyConfig.put('/config', async (req: Request, res: Response) => {
-  const { company_name, min_work_hours, max_work_hours } = req.body;
+// Ruta: /api/company/basic
+// Métodos HTTP: GET, PUT
 
-  // Verificamos si la empresa ya tiene una configuración almacenada
-  const existingConfig = await pool.oneOrNone(
-    'SELECT * FROM company_config WHERE company_name = $1',
-    [company_name]
-  );
+// Obtener la configuración básica de la empresa
+routerSetting.get('/basic', (req, res) => {
+  // Lógica para obtener la configuración básica de la empresa desde la base de datos
+  const companyConfig = {
+    name: 'Nombre de la empresa',
+    address: 'Dirección de la empresa',
+    contact: {
+      phone: 'Teléfono de contacto',
+      email: 'Correo electrónico de contacto',
+    },
+  };
 
-  if (existingConfig) {
-    // Si la empresa ya tiene una configuración, actualizamos los valores existentes
-    await pool.none(
-      'UPDATE company_config SET min_work_hours = $1, max_work_hours = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
-      [min_work_hours, max_work_hours, existingConfig.id]
-    );
-  } else {
-    // Si la empr no tiene una configuración, creamos un nuevo registro en la base de datos
-    await pool.none(
-      'INSERT INTO company_config (company_name, min_work_hours, max_work_hours) VALUES ($1, $2, $3)',
-      [company_name, min_work_hours, max_work_hours]
-    );
-  }
-
-  res.sendStatus(200);
+  res.json(companyConfig);
 });
 
-export const getCompany = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const company = await pool.findByPk(req.params.id);
-    if (!company) {
-      res.status(404).send(`Company with id ${req.params.id} not found`);
-      return;
-    }
+// Actualizar la configuración básica de la empresa
+routerSetting.put('/basic', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { name, address, contact } = req.body;
 
-    // Obtener las horas mínimas y máximas
-    const minHours = company.min_hours_per_day;
-    const maxHours = company.max_hours_per_day;
+  // Lógica para actualizar la configuración básica de la empresa en la base de datos
 
-    // Devolver la configuración de la empresa junto con la respuesta
-    res.status(200).json({
-      id: company.id,
-      name: company.name,
-      minHours,
-      maxHours,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error retrieving company configuration');
-  }
-};
+  res.json({
+    message: 'Configuración básica de la empresa actualizada correctamente',
+  });
+});
 
-interface ConfiguracionEmpresa {
-  id: number;
-  max_horas_diarias: number;
-  max_horas_semanales: number;
-  empresa_id: number;
-}
+// Ruta: /api/company/payroll-periods
+// Métodos HTTP: GET, PUT
 
-async function getConfiguracionEmpresa(req: Request, res: Response) {
-  const { empresaId } = req.params;
-  try {
-    const configuracionEmpresa = await pool.findOne({
-      empresa_id: empresaId,
-    });
-    if (configuracionEmpresa) {
-      return res.status(200).json(configuracionEmpresa);
-    } else {
-      return res
-        .status(404)
-        .json({ message: 'Configuración de empresa no encontrada' });
-    }
-  } catch (err) {
-    console.error(err);
-    return res
-      .status(500)
-      .json({ message: 'Error al recuperar configuración de empresa' });
-  }
-}
+// Obtener la configuración de los períodos de pago
+routerSetting.get('/payroll-periods', (req, res) => {
+  // Lógica para obtener la configuración de los períodos de pago desde la base de datos
+  const payrollPeriodsConfig = {
+    frequency: 'Quincenal',
+    paymentDays: ['15', '30'],
+    startDate: '2023-01-01',
+  };
 
-async function updateConfiguracionEmpresa(req: Request, res: Response) {
-  const { empresaId } = req.params;
-  const { maxHorasDiarias, maxHorasSemanas } = req.body;
-  try {
-    const configuracionEmpresa = await pool.findOne({ empresa_id: empresaId });
-    if (configuracionEmpresa) {
-      configuracionEmpresa.max_horas_diarias = maxHorasDiarias;
-      configuracionEmpresa.max_horas_semanales = maxHorasSemanas;
-      await configuracionEmpresa.save();
-      return res.status(200).json(configuracionEmpresa);
-    } else {
-      return res
-        .status(404)
-        .json({ message: 'Configuración de empresa no encontrada' });
-    }
-  } catch (err) {
-    console.error(err);
-    return res
-      .status(500)
-      .json({ message: 'Error al actualizar configuración de empresa' });
-  }
-}
+  res.json(payrollPeriodsConfig);
+});
 
-function isWithinPayPeriod(date: Date, config: any): boolean {
-  const { payPeriodStart, payPeriodEnd } = config;
+// Actualizar la configuración de los períodos de pago
+routerSetting.put('/payroll-periods', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { frequency, paymentDays, startDate } = req.body;
 
-  // If pay period start or end is not defined, consider it to be valid
-  if (!payPeriodStart || !payPeriodEnd) {
-    return true;
-  }
+  // Lógica para actualizar la configuración de los períodos de pago en la base de datos
 
-  // Check if date is within pay period
-  return date >= payPeriodStart && date <= payPeriodEnd;
-}
+  res.json({
+    message: 'Configuración de los períodos de pago actualizada correctamente',
+  });
+});
 
-export { updateConfiguracionEmpresa, getConfiguracionEmpresa };
+// Ruta: /api/company/working-hours
+// Métodos HTTP: GET, PUT
 
-export default routerCompanyConfig;
+// Obtener la configuración de horarios de trabajo
+routerSetting.get('/working-hours', (req, res) => {
+  // Lógica para obtener la configuración de horarios de trabajo desde la base de datos
+  const workingHoursConfig = {
+    startTime: '08:00',
+    endTime: '17:00',
+    dailyHours: 8,
+    workDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+    breaks: [{ startTime: '12:00', endTime: '13:00' }],
+  };
+
+  res.json(workingHoursConfig);
+});
+
+// Actualizar la configuración de horarios de trabajo
+routerSetting.put('/working-hours', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { startTime, endTime, dailyHours, workDays, breaks } = req.body;
+
+  // Lógica para actualizar la configuración de horarios de trabajo en la base de datos
+
+  res.json({
+    message:
+      'Configuración de los horarios de trabajo actualizada correctamente',
+  });
+});
+
+// Ruta: /api/company/employee-types
+// Métodos HTTP: GET, POST
+
+// Obtener la lista de tipos de empleados
+routerSetting.get('/employee-types', (req, res) => {
+  // Lógica para obtener la lista de tipos de empleados desde la base de datos
+  const employeeTypes = [
+    { id: 1, name: 'Tiempo completo' },
+    { id: 2, name: 'Medio tiempo' },
+    { id: 3, name: 'Contratista' },
+  ];
+
+  res.json(employeeTypes);
+});
+
+// Crear un nuevo tipo de empleado
+routerSetting.post('/employee-types', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { name } = req.body;
+
+  // Lógica para crear un nuevo tipo de empleado en la base de datos
+
+  res.json({ message: 'Tipo de empleado creado correctamente' });
+});
+
+// Ruta: /api/company/deductions-benefits
+// Métodos HTTP: GET, POST
+
+// Obtener la lista de deducciones y beneficios
+routerSetting.get('/deductions-benefits', (req, res) => {
+  // Lógica para obtener la lista de deducciones y beneficios desde la base de datos
+  const deductionsBenefits = [
+    { id: 1, name: 'Impuestos' },
+    { id: 2, name: 'Seguros' },
+    { id: 3, name: 'Bonificaciones' },
+    { id: 4, name: 'Comisiones' },
+  ];
+
+  res.json(deductionsBenefits);
+});
+
+// Crear una nueva deducción o beneficio
+routerSetting.post('/deductions-benefits', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { name } = req.body;
+
+  // Lógica para crear una nueva deducción o beneficio en la base de datos
+
+  res.json({ message: 'Deducción o beneficio creado correctamente' });
+});
+
+// Ruta: /api/company/holidays
+// Métodos HTTP: GET, POST
+
+// Obtener la lista de días festivos
+routerSetting.get('/holidays', (req, res) => {
+  // Lógica para obtener la lista de días festivos desde la base de datos
+  const holidays = [
+    { id: 1, date: '2023-12-25', name: 'Navidad' },
+    { id: 2, date: '2024-01-01', name: 'Año Nuevo' },
+    { id: 3, date: '2024-04-10', name: 'Viernes Santo' },
+  ];
+
+  res.json(holidays);
+});
+
+// Crear un nuevo día festivo
+routerSetting.post('/holidays', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { date, name } = req.body;
+
+  // Lógica para crear un nuevo día festivo en la base de datos
+
+  res.json({ message: 'Día festivo creado correctamente' });
+});
+
+// Ruta: /api/company/notifications
+// Métodos HTTP: GET, POST
+
+// Obtener la configuración de notificaciones
+routerSetting.get('/notifications', (req, res) => {
+  // Lógica para obtener la configuración de notificaciones desde la base de datos
+  const notificationConfig = {
+    emailNotifications: true,
+    messageNotifications: false,
+  };
+
+  res.json(notificationConfig);
+});
+
+// Actualizar la configuración de notificaciones
+routerSetting.post('/notifications', (req, res) => {
+  // Obtener los datos enviados en el cuerpo de la solicitud
+  const { emailNotifications, messageNotifications } = req.body;
+
+  // Lógica para actualizar la configuración de notificaciones en la base de datos
+
+  res.json({
+    message: 'Configuración de notificaciones actualizada correctamente',
+  });
+});
+
+export default routerSetting;

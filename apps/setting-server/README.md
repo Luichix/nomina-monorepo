@@ -1,12 +1,12 @@
-# Microservicio de Registro de Horas
+# Microservicio de Configuración de Nómina
 
-Este microservicio está diseñado para gestionar el registro de horas trabajadas por los empleados. Proporciona una API que permite realizar operaciones como registrar horas, obtener registros de horas, actualizar registros existentes y eliminar registros.
+Este microservicio está diseñado para gestionar la configuración y parámetros de nómina de diferentes empresas. Proporciona una API que permite crear, actualizar, obtener y eliminar la configuración de nómina de cada empresa.
 
 ## Tecnologías utilizadas
 
 - Node.js
 - Express.js
-- PostgreSQL
+- MongoDB
 - TypeScript
 - pnpm
 
@@ -19,14 +19,14 @@ Este microservicio está diseñado para gestionar el registro de horas trabajada
 1. Clona este repositorio en tu máquina local:
 
    ```shell
-   git clone <URL del repositorio>
+   gh repo clone Luichix/nomina-monorepo
 
    ```
 
 2. Navega hasta el directorio del microservicio:
 
    ```shell
-   cd registro-horas
+   cd apps/setting-server
 
    ```
 
@@ -39,8 +39,7 @@ Este microservicio está diseñado para gestionar el registro de horas trabajada
 
 4. Configuración de la base de datos:
 
-- Asegúrate de tener una instancia de PostgreSQL en ejecución.
-- Crea una base de datos para el microservicio de registro de horas.
+- Asegúrate de tener una instancia de MongoDB en ejecución.
 
 5. Configuración del entorno:
 
@@ -48,23 +47,21 @@ Este microservicio está diseñado para gestionar el registro de horas trabajada
 
 6. Ejecución:
 
-- Inicia el microservicio de registro de horas:
+- Inicia el microservicio de configuración de nómina:
 
   ```shell
   pnpm run dev
 
   ```
 
-- El microservicio estará disponible en http://localhost:3000 por defecto, a menos que se especifique una configuración diferente.
+- El microservicio estará disponible en http://localhost:3001 por defecto, a menos que se especifique una configuración diferente.
 
 ## Uso
 
 A continuación se describen las rutas disponibles en la API del microservicio:
 
-- **POST /api/hours**: Permite registrar las horas trabajadas por un empleado en un día.
-- **GET /api/hours**: Permite obtener los registros de horas trabajadas de un empleado en un rango de fechas.
-- **PUT /api/hours/:id**: Permite actualizar un registro de horas existente.
-- **DELETE /api/hours/:id**: Permite eliminar un registro de horas existente.
+- **GET /api/company/:id**: Permite obtener la configuración de nómina de una empresa específica.
+- **PUT /api/company/:id**: Permite actualizar la configuración de nómina de una empresa existente.
 
 Para más detalles sobre los parámetros y respuestas de cada ruta, consulta la documentación en el código fuente del microservicio.
 
@@ -72,63 +69,57 @@ Para más detalles sobre los parámetros y respuestas de cada ruta, consulta la 
 
 A continuación se detallan los procesos ejecutados al utilizar cada ruta principal
 
-1. Proceso de obtención de registros de horas:
+Aquí tienes una posible estructura para configurar cada apartado en su ruta correspondiente dentro del microservicio de configuración de la empresa:
 
-   - Endpoint: `GET /api/hours`
-   - Descripción: Permite obtener los registros de horas trabajadas de un empleado en un rango de fechas.
-   - Parámetros de entrada:
-     - `employeeId`: ID del empleado.
-     - `startDate`: Fecha de inicio del rango (en formato YYYY-MM-DD).
-     - `endDate`: Fecha de fin del rango (en formato YYYY-MM-DD).
-   - Acciones a realizar:
-     - Recuperar los registros de horas correspondientes al empleado y al rango de fechas especificado desde la base de datos.
-     - Retornar los registros de horas obtenidos.
+1. Configuración básica de la empresa:
 
-2. Proceso de registro de horas:
+   - Ruta: `/api/company/basic`
+   - Métodos HTTP:
+     - GET: Obtener la configuración básica de la empresa.
+     - PUT: Actualizar la configuración básica de la empresa.
 
-   - Endpoint: `POST /api/hours`
-   - Descripción: Permite registrar las horas trabajadas por un empleado en un determinado día.
-   - Parámetros de entrada:
-     - `employeeId`: ID del empleado.
-     - `date`: Fecha en la que se registran las horas (en formato YYYY-MM-DD).
-     - `entryTime`: Hora de entrada (en formato HH:mm).
-     - `exitTime`: Hora de salida (en formato HH:mm).
-   - Validaciones a realizar:
-     - Verificar que el empleado exista y esté activo.
-     - Validar que la fecha sea válida y no esté en el futuro.
-     - Validar que las horas de entrada y salida sean coherentes.
-     - Validar que no existan registros duplicados para la misma fecha y hora.
-     - Validar que los registros de tiempo nuevos no se solapen con los registros existentes.
-     - Validar que los registros estén dentro del periodo de pago actual.
-   - Acciones a realizar:
-     - Almacenar el registro de horas en la base de datos.
-     - Realizar cálculos adicionales si es necesario, como calcular horas extras, descuentos, etc.
+2. Configuración de los períodos de pago:
 
-3. Proceso de actualización de registros de horas:
+   - Ruta: `/api/company/payroll-periods`
+   - Métodos HTTP:
+     - GET: Obtener la configuración de los períodos de pago.
+     - PUT: Actualizar la configuración de los períodos de pago.
 
-   - Endpoint: `PUT /api/hours/:id`
-   - Descripción: Permite actualizar un registro de horas existente.
-   - Parámetros de entrada:
-     - `id`: ID del registro de horas a actualizar.
-     - `entryTime`: Hora de entrada actualizada (opcional).
-     - `exitTime`: Hora de salida actualizada (opcional).
-   - Validaciones a realizar:
-     - Verificar que el registro de horas exista y pertenezca al empleado correspondiente.
-     - Validar que las horas de entrada y salida actualizadas sean coherentes.
-     - Validar que los registros de tiempo actualizados no se solapen con otros registros existentes.
-   - Acciones a realizar:
-     - Actualizar el registro de horas en la base de datos con los nuevos valores proporcionados.
+3. Configuración de horarios de trabajo:
 
-4. Proceso de eliminación de registros de horas:
+   - Ruta: `/api/company/working-hours`
+   - Métodos HTTP:
+     - GET: Obtener la configuración de horarios de trabajo.
+     - PUT: Actualizar la configuración de horarios de trabajo.
 
-   - Endpoint: `DELETE /api/hours/:id`
-   - Descripción: Permite eliminar un registro de horas existente.
-   - Parámetros de entrada:
-     - `id`: ID del registro de horas a eliminar.
-   - Acciones a realizar:
-     - Eliminar el registro de horas correspondiente de la base de datos.
+4. Configuración de tipos de empleados:
 
-Estos son algunos de los procesos y rutas comunes para el microservicio de registro de horas. Puedes adaptarlos según tus necesidades específicas y los requisitos de tu sistema.
+   - Ruta: `/api/company/employee-types`
+   - Métodos HTTP:
+     - GET: Obtener la configuración de tipos de empleados.
+     - PUT: Actualizar la configuración de tipos de empleados.
+
+5. Configuración de deducciones y beneficios:
+
+   - Ruta: `/api/company/deductions-benefits`
+   - Métodos HTTP:
+     - GET: Obtener la configuración de deducciones y beneficios.
+     - PUT: Actualizar la configuración de deducciones y beneficios.
+
+6. Configuración de días festivos:
+
+   - Ruta: `/api/company/holidays`
+   - Métodos HTTP:
+     - GET: Obtener la configuración de días festivos.
+     - PUT: Actualizar la configuración de días festivos.
+
+7. Configuración de notificaciones y recordatorios:
+   - Ruta: `/api/company/notifications`
+   - Métodos HTTP:
+     - GET: Obtener la configuración de notificaciones y recordatorios.
+     - PUT: Actualizar la configuración de notificaciones y recordatorios.
+
+Cada ruta y método HTTP corresponde a una funcionalidad específica. Puedes definir los controladores correspondientes para cada ruta y realizar las operaciones de lectura y escritura en la base de datos según sea necesario.
 
 ## Contribución
 
