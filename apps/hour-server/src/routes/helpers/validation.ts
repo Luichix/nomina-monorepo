@@ -1,8 +1,7 @@
-import { Pool } from 'pg';
 import pool from '../../database/connection';
 import addDuration from './../../functions/addDuration';
-import { Request, Response, NextFunction } from 'express';
 import { groupBy } from '../../functions/groupBy';
+import diffDuration from '../../functions/diffDuration';
 
 // Verificar que la fecha de registro sea una fecha valida
 export function isValidDate(dateString: string): boolean {
@@ -31,28 +30,39 @@ export function isEntryExitConsistent(entry: string, exit: string): boolean {
 }
 
 // Realizar validaciones de los registros de horas de acuerdo a los parametros
-export async function validateHoursPerDay(
+export async function isValidHoursPerDay(
   hoursRecord: {
     entryTime: string;
     exitTime: string;
   },
-  companyParams: Record<string, any>
+  companyParams: {
+    minHoursPerDay: string;
+    maxHoursPerDay: string;
+  }
 ): Promise<boolean> {
   // Calculamos las horas trabajadas
-  const totalHours = addDuration(hoursRecord.entryTime, hoursRecord.exitTime);
+  const totalHours = diffDuration(hoursRecord.entryTime, hoursRecord.exitTime);
+  // Funcion para transformar el tiempo en minutos
+  const timeToMinutes = (time: string) => {
+    const timeSplit: string[] = time.split(':');
+    let minutes = timeSplit[1];
+    let hours = timeSplit[0];
+
+    return parseInt(minutes) + parseInt(hours) * 60;
+  };
+
+  const totalTime = timeToMinutes(totalHours);
+  const minHoursPerDay = timeToMinutes(companyParams.minHoursPerDay);
+  const maxHoursPerDay = timeToMinutes(companyParams.maxHoursPerDay);
 
   // Validamos que las horas trabajadas estén dentro de los límites de configuración
-  return (
-    totalHours >= companyParams.minHoursPerDay &&
-    totalHours <= companyParams.maxHoursPerDay
-  );
+  return totalTime >= minHoursPerDay && totalTime <= maxHoursPerDay;
 }
 
 // Validar que los grupos de nuevos registros de horas son consistentes sin superposiciones
-export function isValidateTimeRecords(
+export function isValidateTimeRecordsNotOverlaped(
   timeRecords: {
-    id: number;
-    employee_id: number;
+    employee_id: string;
     date: string;
     start_time: string;
     end_time: string;
@@ -68,7 +78,7 @@ export function isValidateTimeRecords(
     for (let i = 0; i < records.length; i++) {
       const currentRecord = records[i];
       const nextRecord = records[i + 1];
-      if (nextRecord && currentRecord.end_time > nextRecord.start_time) {
+      if (nextRecord && currentRecord.end_time >= nextRecord.start_time) {
         //  Se encontro una superposicione en el registro
         return false;
       }
@@ -77,8 +87,9 @@ export function isValidateTimeRecords(
   //  Se recorrieron todos los registros sin encontrar superposiciones
   return true;
 }
+
 // Validar que los registros nuevos no se sobrepongan sobre los registros de la base de datos
-export async function isValidateTimeLogs(idEmployee, timeLogs) {
+export async function isValidateTimeLogs(idEmployee: any, timeLogs: any) {
   const overlappingLogs = [];
 
   for (const log of timeLogs) {
@@ -101,21 +112,28 @@ export async function isValidateTimeLogs(idEmployee, timeLogs) {
 }
 
 // Validar que los registros nuevos no sean duplicados de los existentes
-export async function isDuplicateTimeLog(idEmpleado, date, startTime, endTime) {
+export async function isDuplicateTimeLog(
+  idEmployee: string,
+  date: string,
+  startTime: string,
+  endTime: string
+) {
   const { rowCount } = await pool.query(
     `SELECT COUNT(*) FROM time_logs WHERE employee_id = $1 AND date = $2 AND start_time = $3 AND end_time = $4`,
-    [idEmpleado, date, startTime, endTime]
+    [idEmployee, date, startTime, endTime]
   );
 
   return rowCount > 0;
 }
 
+// Realizar todas ls validaciones de los registros de horas
+
 export const isValidateRecords = async (
-  idEmployee,
-  date,
-  startTime,
-  endTime,
-  timeLogs
+  idEmployee: string,
+  date: string,
+  startTime: string,
+  endTime: string,
+  timeLogs: any
 ) => {
   // Validar que la fecha sea válida
   if (!isValidDate(date)) {

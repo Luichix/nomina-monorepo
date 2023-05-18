@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+import { Request, Response } from 'express';
 
 import routerHours from './routes/hours';
 
@@ -11,7 +12,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/api/hours', routerHours);
 
-app.get('/', (_, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.send('Time Record Micro Service');
 });
 

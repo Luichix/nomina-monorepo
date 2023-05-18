@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import diffDuration from '../functions/diffDuration';
 import { isValidateRecords } from './helpers/validation';
 
-const routerHours = Router();
+const routerHours: Router = Router();
 
 /* ---------------------------- Obtener Registros --------------------------- */
 
@@ -182,7 +182,7 @@ routerHours.put('/:id', (req, res) => {
   const updatedEmployeeTimeRecord = req.body;
   const id = req.params.id;
 
-  const index = dataHours.findIndex((employee) => employee.hoursID === id);
+  const index = dataHours.findIndex((employee: any) => employee.hoursID === id);
 
   if (index >= 0) {
     dataHours[index] = updatedEmployeeTimeRecord;
@@ -195,7 +195,7 @@ routerHours.patch('/:id', (req, res) => {
   const newInfo = req.body;
   const id = req.params.id;
 
-  const index = dataHours.findIndex((employee) => employee.hoursID === id);
+  const index = dataHours.findIndex((employee: any) => employee.hoursID === id);
 
   if (index >= 0) {
     const employeeToUpdate = dataHours[index];
@@ -209,7 +209,9 @@ routerHours.patch('/:id', (req, res) => {
 // Eliminar el registro de horas de un colaborador
 routerHours.delete('/:id', (req, res) => {
   const id = req.params.id;
-  const indice = dataHours.findIndex((employee) => employee.hoursID === id);
+  const indice = dataHours.findIndex(
+    (employee: any) => employee.hoursID === id
+  );
 
   if (indice >= 0) {
     dataHours.splice(indice, 1);
