@@ -75,7 +75,7 @@ routerHours.post('/new-record/:id', async (req, res) => {
   const idEmployee = req.params.id;
   const { date, startTime, endTime } = req.body;
 
-  if (!isValidateRecords(idEmployee, date, startTime, endTime, [])) {
+  if (!isValidateRecords(parseInt(idEmployee), [date, startTime, endTime])) {
     res.status(400).send('Fecha, hora de entrada y hora de salida inválidas');
     return;
   }
@@ -106,7 +106,7 @@ routerHours.post('/new-records/:id', async (req, res) => {
   // Verificar la validez de cada registro
   for (const log of timeLogs) {
     const { date, startTime, endTime } = log;
-    if (!isValidateRecords(idEmployee, date, startTime, endTime, [])) {
+    if (!isValidateRecords(parseInt(idEmployee), timeLogs)) {
       res.status(400).send('Fecha, hora de entrada y hora de salida inválidas');
       return;
     }
@@ -151,7 +151,7 @@ routerHours.post('/all-new-records', async (req, res) => {
     for (const log of timeLogs) {
       const { idEmployee, date, startTime, endTime } = log;
 
-      if (!isValidateRecords(idEmployee, date, startTime, endTime, [])) {
+      if (!isValidateRecords(idEmployee, [{ date, startTime, endTime }])) {
         res
           .status(400)
           .send('Fecha, hora de entrada y hora de salida inválidas');

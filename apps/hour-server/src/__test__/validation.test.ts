@@ -1,9 +1,10 @@
 import {
+  isDuplicateTimeLog,
   isEntryExitConsistent,
   isValidDate,
   isValidHoursPerDay,
   isValidateNotFutureDate,
-  isValidateTimeLogs,
+  isValidateTimeLogsInBD,
   isValidateTimeRecordsNotOverlaped,
 } from '../routes/helpers/validation';
 
@@ -76,7 +77,7 @@ describe('Verify that the entry and exit time are coherent', () => {
 describe('Verify the time records are consistent with the parameters', () => {
   test('Verify the total time is between into min and max time', async () => {
     const test = await isValidHoursPerDay(
-      { entryTime: '08:00', exitTime: '17:00' },
+      { startTime: '08:00', exitTime: '17:00' },
       { minHoursPerDay: '04:00', maxHoursPerDay: '12:00' }
     );
     expect(test).toBe(true);
@@ -84,7 +85,7 @@ describe('Verify the time records are consistent with the parameters', () => {
 
   test('Verify the total time is less than the min time', async () => {
     const test = await isValidHoursPerDay(
-      { entryTime: '08:00', exitTime: '09:00' },
+      { startTime: '08:00', exitTime: '09:00' },
       { minHoursPerDay: '02:00', maxHoursPerDay: '12:00' }
     );
     expect(test).toBe(false);
@@ -92,7 +93,7 @@ describe('Verify the time records are consistent with the parameters', () => {
 
   test('Verify the total time is greater than the max time', async () => {
     const test = await isValidHoursPerDay(
-      { entryTime: '08:00', exitTime: '19:00' },
+      { startTime: '08:00', exitTime: '19:00' },
       { minHoursPerDay: '04:00', maxHoursPerDay: '10:00' }
     );
     expect(test).toBe(false);
@@ -101,20 +102,18 @@ describe('Verify the time records are consistent with the parameters', () => {
 
 // Validar que los grupos de nuevos registros de horas son consistentes sin superposiciones
 
-describe('Verify that the time records are not overlapped', () => {
+describe('Verify that the time records are consistent without overlapped', () => {
   test('Verify this group time records have some registers overlapped', () => {
     const timeLogs = [
       {
-        employee_id: '01',
         date: '2023-01-01',
-        start_time: '08:00',
-        end_time: '17:00',
+        startTime: '08:00',
+        endTime: '17:00',
       },
       {
-        employee_id: '01',
         date: '2023-01-01',
-        start_time: '17:00',
-        end_time: '19:00',
+        startTime: '17:00',
+        endTime: '19:00',
       },
     ];
     const test = isValidateTimeRecordsNotOverlaped(timeLogs);
@@ -123,16 +122,14 @@ describe('Verify that the time records are not overlapped', () => {
   test('Verify this group time records have not any registers overlapped', () => {
     const timeLogs = [
       {
-        employee_id: '01',
         date: '2023-01-01',
-        start_time: '08:00',
-        end_time: '12:00',
+        startTime: '08:00',
+        endTime: '12:00',
       },
       {
-        employee_id: '01',
         date: '2023-01-01',
-        start_time: '13:00',
-        end_time: '19:00',
+        startTime: '13:00',
+        endTime: '19:00',
       },
     ];
     const test = isValidateTimeRecordsNotOverlaped(timeLogs);
@@ -140,10 +137,42 @@ describe('Verify that the time records are not overlapped', () => {
   });
 });
 
+// Validar que los registros nuevos no sean duplicados de los existentes
+describe('Verify that the new records are not duplicated', () => {
+  test('The new records are duplicated', async () => {
+    const startTime = '08:00:00';
+    const endTime = '12:00:00';
+    const date = '2023-05-01T06:00:00.000Z';
+
+    const idEmployee = 1;
+
+    const test = await isDuplicateTimeLog(idEmployee, [
+      {
+        date,
+        startTime,
+        endTime,
+      },
+    ]);
+    expect(test.length).toBe(1);
+  });
+  test('The new records doest not exist', async () => {
+    const startTime = '08:00:00';
+    const endTime = '12:00:00';
+    const date = '2023-05-01T06:00:00.000Z';
+
+    const idEmployee = 8;
+
+    const test = await isDuplicateTimeLog(idEmployee, [
+      { date, startTime, endTime },
+    ]);
+    expect(test.length).toBe(0);
+  });
+});
+
 // Validar que los registros nuevos no se sobrepongan sobre los registros de la base de datos
 
 describe('Verify that overlapped records are not in the database', () => {
-  test('Verify that the new records are not overlapped with the old ones', async () => {
+  test('Verify that the new records are not overlapped in database', async () => {
     const timeLogs = [
       {
         startTime: '09:00:00',
@@ -156,31 +185,26 @@ describe('Verify that overlapped records are not in the database', () => {
         date: '2023-05-02T06:00:00.000Z',
       },
     ];
-
     const employee_id = 1;
+    const test = await isValidateTimeLogsInBD(employee_id, timeLogs);
 
-    const test = await isValidateTimeLogs(employee_id, timeLogs);
     expect(test.length).toBe(2);
   });
-  // test('Verify that the new records are overlapped with the old ones', async () => {
-  //   const timeLogs = [
-  //     {
-  //       startTime: '13:00:00',
-  //       endTime: '14:00:00',
-  //       date: '2023-05-01T06:00:00.000Z',
-  //     },
-  //     {
-  //       startTime: '14:00:00',
-  //       endTime: '15:00:00',
-  //       date: '2023-05-02T06:00:00.000Z',
-  //     },
-  //   ];
-
-  //   const employee_id = 1;
-
-  //   const test = await isValidateTimeLogs(employee_id, timeLogs);
-  //   expect(test.length).toBe(0);
-  // });
+  test('Verify that the new records are overlapped in database', async () => {
+    const timeLogs = [
+      {
+        startTime: '13:00:00',
+        endTime: '14:00:00',
+        date: '2023-05-01T06:00:00.000Z',
+      },
+      {
+        startTime: '14:00:00',
+        endTime: '15:00:00',
+        date: '2023-05-02T06:00:00.000Z',
+      },
+    ];
+    const employee_id = 1;
+    const test = await isValidateTimeLogsInBD(employee_id, timeLogs);
+    expect(test.length).toBe(0);
+  });
 });
-
-// Validar que los registros nuevos no sean duplicados de los existentes

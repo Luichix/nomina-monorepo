@@ -1,13 +1,12 @@
 import pool from '../../database/connection';
-import addDuration from './../../functions/addDuration';
 import { groupBy } from '../../functions/groupBy';
 import diffDuration from '../../functions/diffDuration';
 
 // Verificar que la fecha de registro sea una fecha valida
-export function isValidDate(dateString: string): boolean {
-  const date = new Date(dateString);
+export function isValidDate(date: string): boolean {
+  const newDate = new Date(date);
   return (
-    !isNaN(date.getTime()) && date.toISOString().slice(0, 10) === dateString
+    !isNaN(newDate.getTime()) && newDate.toISOString().slice(0, 10) === date
   );
 }
 
@@ -23,16 +22,19 @@ export function isValidateNotFutureDate(date: string): boolean {
 }
 
 // Verificar que la hora de entrada y salida sean coherentes
-export function isEntryExitConsistent(entry: string, exit: string): boolean {
-  const entryDate = new Date(`2000-01-01T${entry}:00`);
-  const exitDate = new Date(`2000-01-01T${exit}:00`);
+export function isEntryExitConsistent(
+  startTime: string,
+  exitTime: string
+): boolean {
+  const entryDate = new Date(`2000-01-01T${startTime}:00`);
+  const exitDate = new Date(`2000-01-01T${exitTime}:00`);
   return entryDate < exitDate;
 }
 
 // Realizar validaciones de los registros de horas de acuerdo a los parametros
 export async function isValidHoursPerDay(
-  hoursRecord: {
-    entryTime: string;
+  timeLog: {
+    startTime: string;
     exitTime: string;
   },
   companyParams: {
@@ -41,7 +43,7 @@ export async function isValidHoursPerDay(
   }
 ): Promise<boolean> {
   // Calculamos las horas trabajadas
-  const totalHours = diffDuration(hoursRecord.entryTime, hoursRecord.exitTime);
+  const totalHours = diffDuration(timeLog.startTime, timeLog.exitTime);
   // Funcion para transformar el tiempo en minutos
   const timeToMinutes = (time: string) => {
     const timeSplit: string[] = time.split(':');
@@ -61,15 +63,14 @@ export async function isValidHoursPerDay(
 
 // Validar que los grupos de nuevos registros de horas son consistentes sin superposiciones
 export function isValidateTimeRecordsNotOverlaped(
-  timeRecords: {
-    employee_id: string;
+  timeLogs: {
     date: string;
-    start_time: string;
-    end_time: string;
+    startTime: string;
+    endTime: string;
   }[]
 ): boolean {
   //  Agrupar los registros de tiempo por fecha utilizando la función groupBy
-  const groupedRecords = groupBy(timeRecords, 'date');
+  const groupedRecords = groupBy(timeLogs, 'date');
 
   // Recorrer los registros de cada fecha
   for (const date in groupedRecords) {
@@ -78,7 +79,7 @@ export function isValidateTimeRecordsNotOverlaped(
     for (let i = 0; i < records.length; i++) {
       const currentRecord = records[i];
       const nextRecord = records[i + 1];
-      if (nextRecord && currentRecord.end_time >= nextRecord.start_time) {
+      if (nextRecord && currentRecord.endTime >= nextRecord.startTime) {
         //  Se encontro una superposicione en el registro
         return false;
       }
@@ -88,14 +89,43 @@ export function isValidateTimeRecordsNotOverlaped(
   return true;
 }
 
+// Validar que los registros nuevos no sean duplicados de los existentes
+export async function isDuplicateTimeLog(
+  idEmployee: number,
+  timeLogs: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  }[]
+): Promise<any[]> {
+  const duplicatedLogs = [];
+
+  for (const log of timeLogs) {
+    const { date, startTime, endTime } = log;
+
+    const { rows } = await pool.query(
+      `SELECT COUNT(*) FROM time_logs WHERE employee_id = $1 AND date = $2 AND start_time = $3 AND end_time = $4`,
+      [idEmployee, date, startTime, endTime]
+    );
+
+    if (rows[0].count > 0) {
+      duplicatedLogs.push(log);
+    }
+  }
+  return duplicatedLogs;
+}
+
 // Validar que los registros nuevos no se sobrepongan sobre los registros de la base de datos
-export async function isValidateTimeLogs(idEmployee: any, timeLogs: any) {
+export async function isValidateTimeLogsInBD(
+  idEmployee: any,
+  timeLogs: any
+): Promise<any[]> {
   const overlappingLogs = [];
 
   for (const log of timeLogs) {
     const { date, startTime, endTime } = log;
 
-    const { rowCount } = await pool.query(
+    const { rows } = await pool.query(
       `SELECT COUNT(*) FROM time_logs 
       WHERE employee_id = $1 
       AND date = $2 
@@ -103,7 +133,7 @@ export async function isValidateTimeLogs(idEmployee: any, timeLogs: any) {
       [idEmployee, date, startTime, endTime]
     );
 
-    if (rowCount > 0) {
+    if (rows[0].count > 0) {
       overlappingLogs.push(log);
     }
   }
@@ -111,58 +141,94 @@ export async function isValidateTimeLogs(idEmployee: any, timeLogs: any) {
   return overlappingLogs;
 }
 
-// Validar que los registros nuevos no sean duplicados de los existentes
-export async function isDuplicateTimeLog(
-  idEmployee: string,
-  date: string,
-  startTime: string,
-  endTime: string
-) {
-  const { rowCount } = await pool.query(
-    `SELECT COUNT(*) FROM time_logs WHERE employee_id = $1 AND date = $2 AND start_time = $3 AND end_time = $4`,
-    [idEmployee, date, startTime, endTime]
-  );
-
-  return rowCount > 0;
-}
-
-// Realizar todas ls validaciones de los registros de horas
+// Realizar todas las validaciones de los registros de horas
 
 export const isValidateRecords = async (
-  idEmployee: string,
-  date: string,
-  startTime: string,
-  endTime: string,
-  timeLogs: any
+  idEmployee: number,
+  timeLogs: {
+    date: string;
+    startTime: string;
+    endTime: string;
+  }[]
 ) => {
-  // Validar que la fecha sea válida
-  if (!isValidDate(date)) {
-    // res.status(400).send('Fecha inválida');
-    return;
-  }
-
-  // Validar que la fecha no sea futura
-  if (!isValidateNotFutureDate(date)) {
-    // res.status(400).send('Fecha inválida');
-    return;
-  }
-
-  // Validar que la hora de entrada y salida sean consistentes
-  if (!isEntryExitConsistent(startTime, endTime)) {
-    // res.status(400).send('Hora de entrada y salida no son consistentes');
-    return;
-  }
-
   if (!Array.isArray(timeLogs) || timeLogs.length === 0) {
-    // res.status(400).send('Se esperaba un arreglo de registros de tiempo');
-    return;
+    return {
+      message: 'Se esperaba un arreglo de registros de tiempo',
+      isValid: false,
+    };
   }
 
-  const overlappingLogs = await isValidateTimeLogs(idEmployee, timeLogs);
+  for (const log of timeLogs) {
+    const { date, startTime, endTime } = log;
 
-  if (overlappingLogs.length > 0) {
-    // res.status(400).send('Existen superposiciones en los registros de horas');
-    return;
+    // Validar que la fecha sea válida
+    if (!isValidDate(date)) {
+      return {
+        message: 'El registro de fecha es invalido',
+        isValid: false,
+      };
+    }
+
+    // Validar que la fecha no sea futura
+    if (!isValidateNotFutureDate(date)) {
+      return {
+        message: 'La fecha no puede correspoder a un periodo futuro',
+        isValid: false,
+      };
+    }
+
+    // Validar que la hora de entrada y salida sean consistentes
+    if (!isEntryExitConsistent(startTime, endTime)) {
+      return {
+        message: 'Hora de entrada y salida no son consistentes',
+        isValid: false,
+      };
+    }
+
+    // Realizar validaciones de los registros de horas de acuerdo a los parametros
+    if (
+      await !isValidHoursPerDay(
+        { startTime: startTime, exitTime: endTime },
+        {
+          minHoursPerDay: '08:00',
+          maxHoursPerDay: '20:00',
+        }
+      )
+    ) {
+      return {
+        message:
+          'El tiempo de trabajo no cumple los parametros de horas a laborar',
+        isValid: false,
+      };
+    }
+  }
+
+  if (!isValidateTimeRecordsNotOverlaped(timeLogs)) {
+    return {
+      message: 'Se econtro registro superpuestos en los datoas a ingresar',
+      isValid: false,
+    };
+  }
+
+  // Validar que los registros nuevos no sean duplicados de los existentes
+  const isDuplicated = await isDuplicateTimeLog(idEmployee, timeLogs);
+
+  if (isDuplicated.length > 0) {
+    return {
+      message: 'Se encontraron registros de horas duplicados',
+      isValid: false,
+    };
+  }
+
+  // Validar que los registros nuevos no se sobrepongan sobre los registros de la base de datos
+  const isOverlapedInBD = await isValidateTimeLogsInBD(idEmployee, timeLogs);
+
+  if (isOverlapedInBD.length > 0) {
+    return {
+      message:
+        'Se encontraron registros de horas superpuestos en la base de datos',
+      isValid: false,
+    };
   }
 
   return true;
