@@ -74,9 +74,14 @@ routerHours.get(
 routerHours.post('/new-record/:id', async (req, res) => {
   const idEmployee = req.params.id;
   const { date, startTime, endTime } = req.body;
+  console.log('🚀 ~ file: hours.ts:77 ~ routerHours.post ~ date:', date);
 
-  if (!isValidateRecords(parseInt(idEmployee), [date, startTime, endTime])) {
-    res.status(400).send('Fecha, hora de entrada y hora de salida inválidas');
+  const validatedRecord = await isValidateRecords(parseInt(idEmployee), [
+    { date, startTime, endTime },
+  ]);
+
+  if (!validatedRecord.isValid) {
+    res.status(400).send(validatedRecord.message);
     return;
   }
 
@@ -98,18 +103,14 @@ routerHours.post('/new-records/:id', async (req, res) => {
   const idEmployee = req.params.id;
   const timeLogs = req.body;
 
-  if (!Array.isArray(timeLogs) || timeLogs.length === 0) {
-    res.status(400).send('Se esperaba un arreglo de registros de tiempo');
-    return;
-  }
+  const validatedRecords = await isValidateRecords(
+    parseInt(idEmployee),
+    timeLogs
+  );
 
-  // Verificar la validez de cada registro
-  for (const log of timeLogs) {
-    const { date, startTime, endTime } = log;
-    if (!isValidateRecords(parseInt(idEmployee), timeLogs)) {
-      res.status(400).send('Fecha, hora de entrada y hora de salida inválidas');
-      return;
-    }
+  if (!validatedRecords.isValid) {
+    res.status(400).send(validatedRecords.message);
+    return;
   }
 
   try {
@@ -151,10 +152,12 @@ routerHours.post('/all-new-records', async (req, res) => {
     for (const log of timeLogs) {
       const { idEmployee, date, startTime, endTime } = log;
 
-      if (!isValidateRecords(idEmployee, [{ date, startTime, endTime }])) {
-        res
-          .status(400)
-          .send('Fecha, hora de entrada y hora de salida inválidas');
+      const validatedRecords = await isValidateRecords(idEmployee, [
+        { date, startTime, endTime },
+      ]);
+
+      if (validatedRecords.isValid === false) {
+        res.status(400).send(validatedRecords.message);
         return;
       }
 

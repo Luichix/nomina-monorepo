@@ -9,6 +9,43 @@ import {
 } from '../routes/helpers/validation';
 
 import pool from '../database/connection';
+import { isValidateRecords } from '../routes/helpers/validation';
+
+const ERROR_MESSAGES = {
+  validDate: {
+    message: 'El registro de fecha es invalido',
+    isValid: false,
+  },
+  futureDate: {
+    message: 'La fecha no puede correspoder a un periodo futuro',
+    isValid: false,
+  },
+  entryExitConsistent: {
+    message: 'Hora de entrada y salida no son consistentes',
+    isValid: false,
+  },
+  hoursPerDay: {
+    message: 'El tiempo de trabajo no cumple los parametros de horas a laborar',
+    isValid: false,
+  },
+  overlapped: {
+    message: 'Se encontraron registros superpuestos en los datos a ingresar',
+    isValid: false,
+  },
+  duplicated: {
+    message: 'Se encontraron registros de horas duplicados',
+    isValid: false,
+  },
+  overlappedInDB: {
+    message:
+      'Se encontraron registros de horas superpuestos en la base de datos',
+    isValid: false,
+  },
+  valid: {
+    message: '',
+    isValid: true,
+  },
+};
 
 afterAll(async () => {
   // Tear down the database connection pool after running the tests
@@ -206,5 +243,169 @@ describe('Verify that overlapped records are not in the database', () => {
     const employee_id = 1;
     const test = await isValidateTimeLogsInBD(employee_id, timeLogs);
     expect(test.length).toBe(0);
+  });
+});
+
+// Realizar todas las validaciones de los registros de horas
+
+describe('Reviewing consolidated function of all validation', () => {
+  test('The date is invalid', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '01-01-2023',
+        startTime: '08:00',
+        endTime: '17:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.validDate);
+  });
+
+  test('The date is in the future', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '2025-12-01',
+        startTime: '08:00',
+        endTime: '17:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.futureDate);
+  });
+
+  test('The entry and exit time are not consistent', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '2023-05-01',
+        startTime: '17:00',
+        endTime: '08:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.entryExitConsistent);
+  });
+
+  test('The total time is less of the parameters', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '2023-05-01',
+        startTime: '08:00',
+        endTime: '10:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.hoursPerDay);
+  });
+  test('The total time is great than the parameters', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '2023-05-01',
+        startTime: '08:00',
+        endTime: '20:10',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.hoursPerDay);
+  });
+
+  test('The new records are overlapped', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '2023-01-01',
+        startTime: '08:00',
+        endTime: '12:00',
+      },
+      {
+        date: '2023-01-01',
+        startTime: '12:00',
+        endTime: '19:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.overlapped);
+  });
+
+  test('The new records are duplicated', async () => {
+    const idEmployee = 1;
+    const timeLogs = [
+      {
+        date: '2023-05-01',
+        startTime: '08:00',
+        endTime: '12:00',
+      },
+      {
+        date: '2023-01-02',
+        startTime: '08:00',
+        endTime: '12:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.duplicated);
+  });
+
+  test('The new records are overlaped in the database', async () => {
+    const idEmployee = 2;
+    const timeLogs = [
+      {
+        date: '2023-05-01',
+        startTime: '11:59',
+        endTime: '17:00',
+      },
+      {
+        date: '2023-01-02',
+        startTime: '13:00',
+        endTime: '17:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual(ERROR_MESSAGES.overlappedInDB);
+  });
+
+  test('The new records are valid', async () => {
+    const idEmployee = 2;
+    const timeLogs = [
+      {
+        date: '2023-05-01',
+        startTime: '13:00',
+        endTime: '17:00',
+      },
+      {
+        date: '2023-01-02',
+        startTime: '13:00',
+        endTime: '17:00',
+      },
+      {
+        date: '2023-01-11',
+        startTime: '08:00',
+        endTime: '12:00',
+      },
+      {
+        date: '2023-01-12',
+        startTime: '08:00',
+        endTime: '12:00',
+      },
+      {
+        date: '2023-01-13',
+        startTime: '13:00',
+        endTime: '17:00',
+      },
+    ];
+
+    const test = await isValidateRecords(idEmployee, timeLogs);
+    expect(test).toEqual({ message: '', isValid: true });
   });
 });

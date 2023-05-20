@@ -185,16 +185,16 @@ export const isValidateRecords = async (
       };
     }
 
+    const isHoursPerDay = await isValidHoursPerDay(
+      { startTime: startTime, exitTime: endTime },
+      {
+        minHoursPerDay: '03:00',
+        maxHoursPerDay: '12:00',
+      }
+    );
+
     // Realizar validaciones de los registros de horas de acuerdo a los parametros
-    if (
-      await !isValidHoursPerDay(
-        { startTime: startTime, exitTime: endTime },
-        {
-          minHoursPerDay: '08:00',
-          maxHoursPerDay: '20:00',
-        }
-      )
-    ) {
+    if (!isHoursPerDay) {
       return {
         message:
           'El tiempo de trabajo no cumple los parametros de horas a laborar',
@@ -205,7 +205,7 @@ export const isValidateRecords = async (
 
   if (!isValidateTimeRecordsNotOverlaped(timeLogs)) {
     return {
-      message: 'Se econtro registro superpuestos en los datoas a ingresar',
+      message: 'Se encontraron registros superpuestos en los datos a ingresar',
       isValid: false,
     };
   }
@@ -231,5 +231,5 @@ export const isValidateRecords = async (
     };
   }
 
-  return true;
+  return { message: '', isValid: true };
 };
