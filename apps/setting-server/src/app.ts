@@ -16,5 +16,5 @@ app.get('/', (_, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`API Time Record - Started on port ${port} 🚀`);
+  console.log(`API Company Setting - Started on port ${port} 🚀`);
 });

@@ -121,6 +121,47 @@ Aquí tienes una posible estructura para configurar cada apartado en su ruta cor
 
 Cada ruta y método HTTP corresponde a una funcionalidad específica. Puedes definir los controladores correspondientes para cada ruta y realizar las operaciones de lectura y escritura en la base de datos según sea necesario.
 
+## Microservicio de configuración o parámetros de nómina de empresas:
+
+1. Configuración básica de la empresa:
+
+   - Nombre de la empresa.
+   - Dirección de la empresa.
+   - Información de contacto (teléfono, correo electrónico, etc.).
+
+2. Configuración de los períodos de pago:
+
+   - Frecuencia de los pagos (semanal, quincenal, mensual, etc.).
+   - Día(s) de pago.
+   - Fecha de inicio del período de pago actual.
+
+3. Configuración de horarios de trabajo:
+
+   - Horario de inicio y fin de la jornada laboral.
+   - Horas de trabajo diarias.
+   - Días laborables de la semana.
+   - Horarios de descanso o pausas.
+
+4. Configuración de tipos de empleados:
+
+   - Categorías o roles de empleados (tiempo completo, medio tiempo, contratista, etc.).
+   - Tarifas de pago por categoría.
+
+5. Configuración de deducciones y beneficios:
+
+   - Deducciones obligatorias (impuestos, seguros, etc.).
+   - Beneficios adicionales (bonificaciones, comisiones, subsidios, etc.).
+   - Fórmulas de cálculo para deducciones y beneficios.
+
+6. Configuración de días festivos:
+
+   - Lista de días festivos nacionales o locales.
+   - Reglas especiales para el cálculo de días festivos.
+
+7. Configuración de notificaciones y recordatorios:
+
+   - Correo electrónico o mensajes automáticos para recordar a los empleados sobre la presentación de horas o el pago de nóminas.
+
 ## Contribución
 
 Si deseas contribuir a este proyecto, ¡eres bienvenido! Puedes hacerlo siguiendo estos pasos:
