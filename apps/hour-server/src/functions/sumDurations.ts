@@ -1,5 +1,5 @@
 import { HourRecordWithOnlyDuration } from '../interfaces/types';
-import addDuration from './addDuration';
+import { addDuration } from 'helper';
 
 const sumDurations = (time: HourRecordWithOnlyDuration[]): string => {
   return time.reduce((acc: any, item: any) => {
