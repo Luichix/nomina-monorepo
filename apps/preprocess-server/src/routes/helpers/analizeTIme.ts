@@ -1,4 +1,4 @@
-import { diffDuration, parseSeconds, parseTime } from 'helper';
+import { addDuration, diffDuration, parseSeconds, parseTime } from 'helper';
 import { Overtime, Regime, Schedule, Working_Day } from '../../interfaces/time';
 
 interface Time_Log {
@@ -14,10 +14,13 @@ type ExtraHours = Record<string, string | number>;
 interface Real_Time {
   idTimeLog: number;
   idEmployee: number;
+  date: string;
   startTime: string;
   endTime: string;
   duration: string;
   extraHours: ExtraHours[];
+  totalExtraHours: string;
+  restTime: string;
 }
 
 interface Params_Work_Time {
@@ -26,6 +29,14 @@ interface Params_Work_Time {
   regime: Regime;
   overtime: Overtime;
   schedule: Schedule;
+}
+
+interface DailyWorkDuration {
+  date: string;
+  totalDuration: string;
+  countRecord: number;
+  restTime: string;
+  netDuration: string;
 }
 
 const MIN_TIME_ENTRY = '00:05';
@@ -57,8 +68,9 @@ export function analyzeOvertime(
   paramsRegime: Regime,
   paramsOvertime: Overtime,
   paramsWorkingDay: Working_Day
-): ExtraHours[] {
-  const extraHours: ExtraHours[] = [];
+): { extraHoursDetail: ExtraHours[]; totalExtraHours: string } {
+  const extraHoursDetail: ExtraHours[] = [];
+  let totalExtraHours = '00:00:00';
 
   // Verificar si se puede aplicar el tiempo extra en los registros si la propiedad 'extras' de paramsRegime es true
   if (paramsRegime.extras) {
@@ -96,15 +108,17 @@ export function analyzeOvertime(
         // Convertir la duración de segundos a formato de tiempo
         const extraDurationTime = parseSeconds(extraDurationSeconds);
 
-        extraHours.push({
+        extraHoursDetail.push({
           // Agregar el tiempo extra al array de extraHours
           type: overtime.type,
           duration: extraDurationTime,
           surcharge: overtime.surcharge,
         });
+
+        totalExtraHours = addDuration(totalExtraHours, extraDurationTime);
       } else {
         // Si no hay horas extras dentro del rango de tiempo de entrada y salida, se agrega un objeto de tiempo extra con duración 00:00
-        extraHours.push({
+        extraHoursDetail.push({
           type: overtime.type,
           duration: '00:00',
           surcharge: overtime.surcharge,
@@ -113,9 +127,10 @@ export function analyzeOvertime(
     }
   }
 
-  return extraHours;
+  return { extraHoursDetail, totalExtraHours };
 }
 
+// Funcion para analizar los registros de tiempo y transformarlo en registro de horas efectivas
 export function analyzeTimeRecords(
   timeLogs: Time_Log[],
   params: Params_Work_Time
@@ -157,10 +172,13 @@ export function analyzeTimeRecords(
       const realTime: Real_Time = {
         idTimeLog: log.time_log_id,
         idEmployee: log.employee_id,
+        date: log.date,
         startTime: effectiveEntryTime,
         endTime: log.end_time,
         duration: duration,
-        extraHours: extraHours,
+        extraHours: extraHours.extraHoursDetail,
+        totalExtraHours: extraHours.totalExtraHours,
+        restTime: workingDay.rest,
       };
 
       realTimes.push(realTime);
@@ -170,13 +188,61 @@ export function analyzeTimeRecords(
       const realTime: Real_Time = {
         idTimeLog: log.time_log_id,
         idEmployee: log.employee_id,
+        date: log.date,
         startTime: log.start_time,
         endTime: log.end_time,
         duration: duration,
         extraHours: [],
+        totalExtraHours: '00:00:00',
+        restTime: '00:00',
       };
     }
   }
 
   return realTimes;
+}
+
+// Funcion para generar la duracion consolidada de horas del dia
+export function getDailyWorkDuration(
+  records: Real_Time[]
+): DailyWorkDuration[] {
+  const dailyWorkDurations: DailyWorkDuration[] = [];
+
+  // Recorrer los registros de horas efectivas
+  for (const record of records) {
+    const { date, duration, restTime } = record;
+
+    const recordDuration: number = parseTime(duration); // Puedes implementar la función parseDuration para convertir la duración en formato adecuado a segundos
+
+    // Verificar si ya se ha registrado la duración para esa fecha
+    const existingRecord = dailyWorkDurations.find(
+      (record) => record.date === date
+    );
+
+    if (existingRecord) {
+      // Si la fecha ya existe en el array, se suma la duración
+      existingRecord.totalDuration += recordDuration;
+      existingRecord.countRecord++;
+    } else {
+      const duration = parseSeconds(recordDuration);
+
+      // Si la fecha no existe en el array, se agrega un nuevo objeto
+      dailyWorkDurations.push({
+        date,
+        totalDuration: duration,
+        countRecord: 1,
+        restTime,
+        netDuration: duration,
+      });
+    }
+  }
+
+  // Ajustar la duración total de acuerdo a la aplicación del tiempo de descanso
+  for (const record of dailyWorkDurations) {
+    if (record.countRecord === 1) {
+      record.netDuration = diffDuration(record.restTime, record.totalDuration); // Puedes implementar la función parseSeconds para convertir la duración en formato adecuado
+    }
+  }
+
+  return dailyWorkDurations;
 }
