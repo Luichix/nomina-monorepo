@@ -10,6 +10,7 @@ import {
 
 import pool from '../database/connection';
 import { isValidateRecords } from '../routes/helpers/validation';
+import parseTime from '../functions/helpers/parseTime';
 
 const ERROR_MESSAGES = {
   validDate: {

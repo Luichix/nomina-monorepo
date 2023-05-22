@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import pool from '../database/connection';
 
-const routerSetting = Router();
+const routerSetting: Router = Router();
 
 // Ruta: /api/company/basic
 // Métodos HTTP: GET, PUT
