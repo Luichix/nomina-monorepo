@@ -1,0 +1,4 @@
+[
+  { "id": 0, "name": "General", "extras": true, "compensatory": false },
+  { "id": 1, "name": "Administración", "extras": false, "compensatory": true }
+]

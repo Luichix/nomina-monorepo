@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "name": "Administración",
+    "description": "Jornada para personal administrativo",
+    "workingDay": [
+      {
+        "weekday": 0,
+        "day": "sunday",
+        "entry": "00:00",
+        "exit": "00:00",
+        "rest": "00:00",
+        "hours": "00:00"
+      },
+      {
+        "weekday": 1,
+        "day": "monday",
+        "entry": "08:00",
+        "exit": "17:00",
+        "rest": "01:00",
+        "hours": "08:00"
+      },
+      {
+        "weekday": 2,
+        "day": "tuesday",
+        "entry": "08:00",
+        "exit": "17:00",
+        "rest": "01:00",
+        "hours": "08:00"
+      },
+      {
+        "weekday": 3,
+        "day": "wednesday",
+        "entry": "08:00",
+        "exit": "17:00",
+        "rest": "01:00",
+        "hours": "08:00"
+      },
+      {
+        "weekday": 4,
+        "day": "thursday",
+        "entry": "08:00",
+        "exit": "17:00",
+        "rest": "01:00",
+        "hours": "08:00"
+      },
+      {
+        "weekday": 5,
+        "day": "friday",
+        "entry": "08:00",
+        "exit": "17:00",
+        "rest": "01:00",
+        "hours": "08:00"
+      },
+      {
+        "weekday": 6,
+        "day": "saturday",
+        "entry": "08:00",
+        "exit": "17:00",
+        "rest": "01:00",
+        "hours": "08:00"
+      }
+    ],
+    "workingHours": "48:00"
+  }
+]

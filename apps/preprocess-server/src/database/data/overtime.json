@@ -1,0 +1,20 @@
+[
+  {
+    "type": "diurna",
+    "start": "06:00",
+    "end": "18:00",
+    "surcharge": 1.25
+  },
+  {
+    "type": "mix",
+    "start": "18:00",
+    "end": "20:00",
+    "surcharge": 1.5
+  },
+  {
+    "type": "nocturna",
+    "start": "20:00",
+    "end": "24:00",
+    "surcharge": 1.75
+  }
+]

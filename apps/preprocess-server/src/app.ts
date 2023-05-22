@@ -10,7 +10,7 @@ const port = process.env.PORT || 3002;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use('/api/setting', routerPreprocess);
+app.use('/api/preprocess', routerPreprocess);
 
 app.get('/', (_: Request, res: Response) => {
   res.send('Time Preprocessor Micro Service');
