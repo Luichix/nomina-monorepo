@@ -248,17 +248,54 @@ describe('Funciones para el analisis de los registros de tiempo', () => {
 });
 
 describe('Funcion para generar la duracion consolidada de horas del dia', () => {
-  test('Generar el reporte consolidado de horas de un colaborador', () => {
-    const timeRecordAnalized = analyzeTimeRecords(TimeLog, {
-      overtime: Overtime,
-      schedule: Schedule[0],
-      minTimeEntry: MIN_TIME_ENTRY,
-      minTimeExit: MIN_TIME_EXIT,
-      regime: Regime[0],
-    });
+  test('Generar el reporte consolidado de horas al dia de un colaborador ', () => {
+    const timeRecordAnalized = analyzeTimeRecords(
+      [
+        {
+          time_log_id: 1,
+          employee_id: 1,
+          start_time: '07:45:00',
+          end_time: '17:20:00',
+          date: '2023-05-01T06:00:00.000Z',
+        },
+      ],
+      {
+        overtime: Overtime,
+        schedule: Schedule[0],
+        minTimeEntry: MIN_TIME_ENTRY,
+        minTimeExit: MIN_TIME_EXIT,
+        regime: Regime[0],
+      }
+    );
 
     const result = getDailyWorkDuration(timeRecordAnalized);
 
-    expect(result).toEqual([]);
+    expect(result).toEqual([
+      {
+        countRecord: 1,
+        date: '2023-05-01T06:00:00.000Z',
+        netDuration: '08:00:00',
+        overtime: '00:20:00',
+        overtimeDetail: [
+          {
+            duration: '00:20:00',
+            surcharge: 1.25,
+            type: 'diurna',
+          },
+          {
+            duration: '00:00',
+            surcharge: 1.5,
+            type: 'mix',
+          },
+          {
+            duration: '00:00',
+            surcharge: 1.75,
+            type: 'nocturna',
+          },
+        ],
+        restTime: '01:00',
+        totalDuration: '09:20:00',
+      },
+    ]);
   });
 });
