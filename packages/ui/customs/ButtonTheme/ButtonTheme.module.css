@@ -13,7 +13,7 @@
 }
 
 .button::after {
-  content: url('../../../assets/sun.svg');
+  content: url('./sun.svg');
   width: 30px;
   height: 30px;
   background-color: var(--color-yellow-400);
@@ -29,7 +29,7 @@
   transition: background-color 0.5s, transform 0.5s ease-in;
 }
 .input:checked + .button::after {
-  content: url('../../../assets/moon.svg');
+  content: url('./moon.svg');
   background-color: var(--color-sky-900);
   transform: translateX(35px) rotate(360deg);
 }

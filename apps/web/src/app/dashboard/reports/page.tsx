@@ -1,9 +1,10 @@
-import React, { useContext } from 'react'
-import styles from './Report.module.css'
-import Table from '../../../components/customs/Table'
-import classNames from 'classnames'
-import ThemeContext from '../../../contexts/ThemeContext'
-const fecha = new Date()
+'use client';
+import React, { useContext } from 'react';
+import styles from './Report.module.css';
+import Table from 'ui/customs/Table';
+import classNames from 'classnames';
+import ThemeContext from '../../../contexts/ThemeContext';
+const fecha = new Date();
 
 const word = {
   es: {
@@ -32,7 +33,7 @@ const word = {
     FK_USER_ALTER: 'Modificador',
     FK_USER_LOW: 'Finalizador',
   },
-}
+};
 
 const data = [
   {
@@ -87,25 +88,25 @@ const data = [
     FK_USER_ALTER: 'Luichix',
     FK_USER_LOW: 'Luichix',
   },
-]
+];
 
 const getHead = (data) => {
-  const head = []
+  const head = [];
 
   for (const key in data) {
-    head.push(data[key])
+    head.push(data[key]);
   }
-  return head
-}
-const headers = getHead(word.es)
+  return head;
+};
+const headers = getHead(word.es);
 
 function Report() {
-  const { theme } = useContext(ThemeContext)
+  const { theme } = useContext(ThemeContext);
   return (
-    <div className={classNames(styles.personal, styles[theme])}>
+    <div className={classNames(styles.table, styles[theme])}>
       <Table headers={headers} records={data} />
     </div>
-  )
+  );
 }
 
-export default Report
+export default Report;
