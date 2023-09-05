@@ -1,0 +1,3 @@
+[submodule "apps/nomina-web"]
+	path = apps/nomina-web
+	url = https://github.com/Luichix/nomina-web
